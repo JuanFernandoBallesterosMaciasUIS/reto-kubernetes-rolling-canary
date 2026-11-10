@@ -1,0 +1,46 @@
+# ESCENARIO DE FALLO 1: la v4 crashea al arrancar (CrashLoopBackOff).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tienda
+  labels:
+    app: tienda
+  annotations:
+    kubernetes.io/change-cause: "v4 - nueva conexion a BD (FALLA AL ARRANCAR)"
+spec:
+  replicas: 4
+  revisionHistoryLimit: 10        # cuántas revisiones guarda para rollout undo
+  progressDeadlineSeconds: 60     # si no progresa en 60s el rollout se marca como fallido
+  minReadySeconds: 5              # un pod debe estar Ready 5s antes de contarse como disponible
+  selector:
+    matchLabels:
+      app: tienda
+      track: stable
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                 # como máximo 1 pod extra (5 en total) durante la actualización
+      maxUnavailable: 0           # nunca bajar de 4 pods disponibles -> cero downtime
+  template:
+    metadata:
+      labels:
+        app: tienda
+        track: stable
+    spec:
+      containers:
+        - name: tienda
+          image: reto-app:v4-crash
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:         # el Service solo envía tráfico a pods Ready
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits:   { cpu: 200m, memory: 128Mi }

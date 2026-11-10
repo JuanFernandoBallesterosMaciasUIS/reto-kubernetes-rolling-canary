@@ -1,0 +1,10 @@
+FROM node:20-alpine
+ARG APP_VERSION=v1
+ARG APP_COLOR=steelblue
+ARG FAIL_MODE=none
+ENV APP_VERSION=${APP_VERSION} APP_COLOR=${APP_COLOR} FAIL_MODE=${FAIL_MODE}
+WORKDIR /app
+COPY server.js .
+EXPOSE 8080
+USER node
+CMD ["node", "server.js"]

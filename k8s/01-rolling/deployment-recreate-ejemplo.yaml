@@ -1,0 +1,21 @@
+# EJEMPLO DE REFERENCIA (no aplicado en la práctica): estrategia Recreate.
+# Elimina todos los pods viejos antes de crear los nuevos -> hay downtime.
+# Útil solo cuando dos versiones no pueden convivir (p.ej. migraciones de BD incompatibles).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tienda-recreate
+spec:
+  replicas: 4
+  selector:
+    matchLabels: { app: tienda-recreate }
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: { app: tienda-recreate }
+    spec:
+      containers:
+        - name: tienda
+          image: reto-app:v2
+          ports: [{ containerPort: 8080 }]

@@ -1,0 +1,36 @@
+# Canary: 1 réplica de la nueva versión junto a las 4 estables.
+# Comparte la etiqueta app=tienda -> el Service le envía ~1/5 (20%) del tráfico.
+# Se diferencia por track=canary para poder gestionarlo por separado.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tienda-canary
+  labels:
+    app: tienda
+  annotations:
+    kubernetes.io/change-cause: "v3 canary - nuevo checkout"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tienda
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: tienda
+        track: canary
+    spec:
+      containers:
+        - name: tienda
+          image: reto-app:v3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
